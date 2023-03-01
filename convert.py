@@ -1,10 +1,61 @@
-import os; import glob; import pandas as pd;import csv;from datetime import datetime;from __main__ import *
+import os
+import sys
+import glob
+import pandas as pd
+import paramiko
+from datetime import datetime
+from __main__ import *
 
-def start():
-    """Starts the script, set globals and takes input for file path
-     none   
-    Returns:
-     .zip file conversion function output to selected directory path"""
+tag=input("Identifiying tag")
+base_path=os.path.abspath(__file__ + "/../../")
+save_path=f"{base_path}/data/raw/{tag}/test.zip"
+
+def ssh_extract():
+    ip=input("Device IP Address")
+    ssh_username=input("Login Username")
+    ssh_password=input("Login Password")
+    command="/export"
+    client = paramiko.client.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect(
+                    ip, 
+                    username=ssh_username, 
+                    password=ssh_password
+                    )
+    except PermissionError as e:
+        print("Could not connect, try again")
+        ssh_extract()
+    _stdin, _stdout,_stderr=client.exec_command(command)    
+    with open('file', 'w') as sys.stdout:
+        print(_stdout.read().decode())
+    client.close()
+
+def rsclist():
+    global rsc_list
+    rsc_file=glob.glob(save_path + '\\*.rsc')   
+    rsc_list = []
+    str1 = ''
+    with open(rsc_file) as rsc:
+        for line in rsc:
+            if line.startswith('add '):
+                str1 = line.replace('list=CountryIPBlocks\n',
+                                    'list=CountryIPBlocks ')
+                rsc_list.append(str1)
+    return (rsc_list)
+
+
+def rsczip(rsc_list):
+    global df_rsc
+    df_rscr = pd.DataFrame(rsc_list)
+    df_rscn = df_rscr.drop(0)
+    newrow = df_rscn.DataFrame(dts, index=[0])
+    df_rsc = df_rscn.concat([newrow, df_rscn.loc[:]]).reset_index(drop=True)
+    df_rsc.to_csv(df_rsc, index=False, compression="zip")
+    return (df_rsc)
+
+
+def main():
     global inputdir
     global rsc_files
     global rsc_file
@@ -13,85 +64,16 @@ def start():
     global dts
     n = datetime.now()
     dts = n.strftime("%d/%m/%Y %H:%M:%S")
-    try:
-        inputdir=input('enter .rsc file path --> ')
-    except FileNotFoundError as e:
-        print('Input directory path')
-        start()
-    except PermissionError as e:
-        print('Input directory path')
-        start()
-    rsc_files=getrsc_files(inputdir)
-    rsc_file=rscselect(di_rsc_files) 
-    rsc_list=rsclist(rsc_file)  
+    rsc_list = rsclist(rsc_file)
+    print("[Convert] Start")
+    os.chdir(save_path)
+    print("[Convert] setting up ssh tunnel to device")
+    ssh_extract()
+    print("[Convert] extraction succesful")
+    print("[Convert] converting to .zip")
+    rsclist()
+    rsczip(rsc_list)
+    print("Save successful")
+    print(f"[Convert] End")
 
-
-def getrsc_files(inputdir):
-    """change dir to .rsc file path, 
-    picks up files places them in a dict
-    Args:
-     directory path(str)
-    Returns: 
-     dict"""
-    global di_rsc_files
-    try:
-        os.chdir(inputdir)
-    except FileNotFoundError as e:
-        print('Input correct path directory')
-        start()
-    rsc_files=glob.glob(inputdir + '\\*.rsc')
-    di_rsc_files={ i : rsc_files[i] for i in range(0, len(rsc_files) ) }
-    return(di_rsc_files) 
-
-def rscselect(di_rsc_files):
-    """allows user to select .rsc file from dict
-    Args:
-     di_rsc_files=dictonary of .rsc file names  
-    Returns:
-     .rsc file in list object"""
-    global di_rsc_file
-    for key, value in di_rsc_files.items():
-        print(key, ' : ', value)
-    try:
-        knum=input('select file key number --> ')
-        i=int(knum)
-        di_rsc_filer=di_rsc_files[i]
-        di_rsc_file=os. rename(i, dts+i)
-    except ValueError as e:
-        print('Input correct key number')
-        rscselect(di_rsc_files)
-    except IndexError as e:
-        print('Input correct key number')
-        rscselect(di_rsc_files) 
-    except KeyError as e:
-        print('Input correct key number')
-        rscselect(di_rsc_files)
-    return(di_rsc_file)
-
-def rsclist(rsc_file):
-    global rsc_list
-    rsc_list=[]
-    str1=''
-    with open(rsc_file) as rsc:
-        for line in rsc:
-            if line.startswith('add '):
-                str1=line.replace('list=CountryIPBlocks\n', 'list=CountryIPBlocks ')
-                rsc_list.append(str1)
-    return(rsc_list)
-
-def rsczip(rsc_list):
-    """for use with IP-firewall-Address-List.rsc
-    changes dir, creates pd-df from rsc_list, 
-    converts to .zip file
-    Args:
-     rsc_file=path and file directory
-    Returns:
-     writes new .zip file to path directory"""
-    global df_rsc
-    df_rscr=pd.DataFrame(rsc_list)
-    df_rscn=df_rscr.drop(0)
-    newrow=df_rscn.DataFrame(dts, index=[0])
-    df_rsc=df_rscn.concat([newrow,df_rscn.loc[:]]).reset_index(drop=True)
-    df_rsc.to_csv(df_rsc, index=False, compression="zip")
-    return(df_rsc)
-
+main()
