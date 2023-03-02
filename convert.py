@@ -6,11 +6,15 @@ import paramiko
 from datetime import datetime
 from __main__ import *
 
-tag=input("Identifiying tag")
+tag=input("Identifiying tag for output file")
 base_path=os.path.abspath(__file__ + "/../../")
 save_path=f"{base_path}/data/raw/{tag}/test.zip"
 
 def ssh_extract():
+    """
+    establishes a ssh tunnel with the device, executes a command at the terminal
+    writes the contents of the output to a new .rsc text file in the directory 
+    """
     ip=input("Device IP Address")
     ssh_username=input("Login Username")
     ssh_password=input("Login Password")
@@ -32,20 +36,23 @@ def ssh_extract():
     client.close()
 
 def rsclist():
+    """
+    places every line from the .rsc file into a list
+    """
     global rsc_list
     rsc_file=glob.glob(save_path + '\\*.rsc')   
     rsc_list = []
     str1 = ''
     with open(rsc_file) as rsc:
         for line in rsc:
-            if line.startswith('add '):
-                str1 = line.replace('list=CountryIPBlocks\n',
-                                    'list=CountryIPBlocks ')
                 rsc_list.append(str1)
     return (rsc_list)
 
 
 def rsczip(rsc_list):
+    """
+    transforms list into a panda dataframe then to a zipped .csv file, placed into the same directory
+    """
     global df_rsc
     df_rscr = pd.DataFrame(rsc_list)
     df_rscn = df_rscr.drop(0)
@@ -56,9 +63,9 @@ def rsczip(rsc_list):
 
 
 def main():
-    global inputdir
-    global rsc_files
-    global rsc_file
+    """
+    sets global variables, establishes datetime for dataframe, executes functions
+    """
     global df_rsc
     global rsc_list
     global dts
