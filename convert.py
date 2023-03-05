@@ -19,7 +19,7 @@ def ssh_extract():
     ssh_username=input("Login Username")
     ssh_password=input("Login Password")
     command="/export"
-    client = paramiko.client.SSHClient()
+    client=paramiko.client.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
         client.connect(
@@ -41,8 +41,8 @@ def rsclist():
     """
     global rsc_list
     rsc_file=glob.glob(save_path + '\\*.rsc')   
-    rsc_list = []
-    str1 = ''
+    rsc_list=[]
+    str1=''
     with open(rsc_file) as rsc:
         for line in rsc:
                 rsc_list.append(str1)
@@ -54,10 +54,10 @@ def rsczip(rsc_list):
     transforms list into a panda dataframe then to a zipped .csv file, placed into the same directory
     """
     global df_rsc
-    df_rscr = pd.DataFrame(rsc_list)
-    df_rscn = df_rscr.drop(0)
-    newrow = df_rscn.DataFrame(dts, index=[0])
-    df_rsc = df_rscn.concat([newrow, df_rscn.loc[:]]).reset_index(drop=True)
+    df_rscr=pd.DataFrame(rsc_list)
+    df_rscn=df_rscr.drop(0)
+    newrow=df_rscn.DataFrame(dts, index=[0])
+    df_rsc=df_rscn.concat([newrow, df_rscn.loc[:]]).reset_index(drop=True)
     df_rsc.to_csv(df_rsc, index=False, compression="zip")
     return (df_rsc)
 
@@ -69,9 +69,9 @@ def main():
     global df_rsc
     global rsc_list
     global dts
-    n = datetime.now()
-    dts = n.strftime("%d/%m/%Y %H:%M:%S")
-    rsc_list = rsclist(rsc_file)
+    n=datetime.now()
+    dts=n.strftime("%d/%m/%Y %H:%M:%S")
+    rsc_list=rsclist(rsc_file)
     print("[Convert] Start")
     os.chdir(save_path)
     print("[Convert] setting up ssh tunnel to device")
